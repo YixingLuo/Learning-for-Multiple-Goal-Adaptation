@@ -1,4 +1,4 @@
-gridmap = load('gridmap-13.mat');
+gridmap = load('gridmap-1.mat');
 env = gridmap.map;
 configure = Configure();
 % figure('visible','off')

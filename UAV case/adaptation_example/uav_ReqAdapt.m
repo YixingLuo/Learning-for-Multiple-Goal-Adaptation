@@ -1,14 +1,4 @@
-% clc
-% clear
-% indextemp = [9,16,19];
-% num_map = 13;
-% SR_list = [];
-% PR_list = [];
-% energy_list = [];
-% acc_list = [];
-% time_list = [];
-% uav_relaxation2(num, indextemp)
-function [data, trajectory,velocity_history,planning_time, rate_list, tag_list] = uav_relaxation(num_map,num_condition, indextemp)
+function [data, trajectory,velocity_history,planning_time, rate_list, tag_list] = uav_ReqAdapt(num_map,num_condition, indextemp)
 global env
 global env_known
 global configure
@@ -113,15 +103,17 @@ while (1)
         index_cond = index_cond+1;
     end
     
-    fprintf(2,'uav_relaxation: current step %d\n', current_step);
-    [SR_risk, PR_risk] =  caculate_risk_new(current_point, env);
-    SR_list = [SR_list;SR_risk];
-    PR_list = [PR_list;PR_risk];
-    acc_list = [acc_list;information];
-    energy_list = [energy_list;energy];
-    time_list = [time_list;time];
+    fprintf(2,'uav_ReqAdapt: current step %d\n', current_step);
+%     [SR_risk, PR_risk] =  caculate_risk_new(current_point, env);
+%     SR_list = [SR_list;SR_risk];
+%     PR_list = [PR_list;PR_risk];
+%     acc_list = [acc_list;information];
+%     energy_list = [energy_list;energy];
+%     time_list = [time_list;time];
     
-    if current_point(1) == end_point(1) && current_point(2) == end_point(2) && current_point(3) == end_point(3)
+    fprintf(2,'uav_ReqAdapt: current step %d \n', current_step);
+    
+    if abs(current_point(1) - end_point(1))<1e-6 && abs(current_point(2) - end_point(2))<1e-6 && abs(current_point(3) - end_point(3))<1e-6
         fprintf(2,'reach the destination!\n')
         DS_i = [information, min(1,(information - configure.forensic_budget)/(configure.forensic_target - configure.forensic_budget))];
         DS_t = [time,min(1,(configure.Time_budget - time)/(configure.Time_budget - configure.Time_target))];
@@ -129,12 +121,11 @@ while (1)
         [SR, DS_SR, PR, DS_PR, DS_acc] = caculate_risk(trajectory, env);
 %         [SR_known, PR_known] = caculate_risk(trajectory,env_known);
         data = [DS_i, DS_t, DS_e, SR, DS_SR, PR, DS_PR, plan_num, relax_num, DS_acc];
-%         name1 = 'planningtime_relaxation.mat';
+%         name1 = 'planningtime.mat';
 %         save(name1, 'planning_time');
-%         trajectory = trajectory(2:end,:);        
-%         name2 = 'trajectory_relaxation.mat';
+%         name2 = 'trajectory.mat';
 %         save(name2, 'trajectory');
-%         name3 = 'velocity_history_relaxation.mat';
+%         name3 = 'velocity_history.mat';
 %         save(name3, 'velocity_history');
         break
     end
@@ -200,8 +191,8 @@ while (1)
             end
         end
     end
-    name = 'env_known-' + string(current_step) + '.mat';
-    save(name, 'env_known');
+%     name = 'env_known-' + string(current_step) + '.mat';
+%     save(name, 'env_known');
 
     
 %     %% 1122
@@ -363,28 +354,20 @@ while (1)
             lb = [lb, 0, 0, 0];
             ub = [ub,configure.forensic_target-configure.forensic_budget, configure.Time_budget-configure.Time_target, configure.battery_budget-configure.battery_target];
             x0 = [x0,0, 0, 0];
+            
+        %%0925 alpha, beta, 
+        lb = [lb,0,0,0,0,0];
+        ub = [ub,1,1,1,1,1];
+        x0 = [x0,0,0,0,0,0];
 
-
-        %interior-point, active-set, trust-region-reflective, sqp, sqp-legacy
-%         options.StepTolerance = 1e-10;
-%         options.MaxFunctionEvaluations = 100000;
         options.Algorithm = 'sqp';
-%         options.Tolx = 1e-10;
-%         options.Tolfun = 1e-10;
-%         options.TolCon = 1e-10;
         options.Display = 'off';
-%         options.algorithm = 'interior-point-convex'; 
-%         options.MaxIter = 10000;
-%         options.MaxFunEvals = 100000;
-%         options=optimoptions(@fmincon,'Algorithm', 'sqp', 'Display','final' ,'MaxIter',100000, 'tolx',1e-100,'tolfun',1e-100, 'TolCon',1e-100 ,'MaxFunEvals', 100000 );
-
-        [x,fval,exitflag]=fmincon(@objuav,x0,[],[],[],[],lb,ub,@myconuav,options);
+        [x,fval,exitflag]=fmincon(@obj_ReqAdapt,x0,[],[],[],[],lb,ub,@mycon_ReqAdapt,options);
        
         tau = configure.Time_step;
 
         iternum = iternum + 1;
-        [safety_variance, safety_ratio, privacy_variance, privacy_ratio, info_variance, info_ratio, time_variance, time_ratio, energy_variance, energy_ratio] = goal_selection(x);
-        ratio = [safety_ratio, privacy_ratio, info_ratio, time_ratio, energy_ratio];
+        [violation_flag, violation_degree] = Violation_Analysis(x);
         
         if exitflag > 0 
             break
@@ -399,6 +382,17 @@ while (1)
             for k = 1:length(x)
                 plan_x (current_step,k+1) = x(k);
             end
+            system_state = [current_point(1),current_point(2),current_point(3),current_point(4),information, energy, time];
+            behavior_plan = [];
+            for k = 1: (initial_N+1) 
+                behavior_plan (k,:) = [x(k), x(k + initial_N + 1), x(k + 2 *(initial_N + 1)), x(k + 3 *(initial_N + 1))];
+            end
+            datalog = DataLog();
+            datalog = InputLog(datalog, env_known, system_state, configure);
+            datalog = OutputLog(datalog, behavior_plan, violation_flag, violation_degree, exitflag);
+            name = 'datalog-' + string(num_map) +'-' + string(current_step) + '.mat';
+            save(name, 'datalog');
+            
             fprintf(2,"there is a solution!!%d, %d\n",exitflag,current_step)
 
             for k = 1: (initial_N+1) 
@@ -472,7 +466,7 @@ while (1)
            plan_num = plan_num + 1;
            fprintf(2,'no solution for relax \n');
            no_solution_flag = 1;
-           break;
+%            break;
         nowp_x = [];
         nowp_y = [];
         nowp_z = [];
