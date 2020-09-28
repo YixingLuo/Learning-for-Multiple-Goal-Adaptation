@@ -1,12 +1,10 @@
-function [data, trajectory,velocity_history,planning_time, rate_list, tag_list] = uav_ReqAdapt(num_map,num_condition, indextemp)
+% function [data, trajectory,velocity_history,planning_time, rate_list, tag_list] = uav_ReqAdapt(num_map,num_condition, indextemp)
 global env
 global env_known
 global configure
 global eplison
 global ratio
 configure = Configure();
-% eplison = [0,0,1e-6,1e-6,1e-6];
-eplison = [1e-20,1e-20,1e-10,1e-20,0.005];
 current_step = 1;
 start_point = [configure.start_point(1),configure.start_point(2),configure.start_point(3),0];
 end_point = [configure.end_point(1),configure.end_point(2),configure.end_point(3),0];
@@ -295,15 +293,17 @@ while (1)
             for i = 1 : (initial_N+1) * 3
                 lb(i) = configure.velocity_min; %% negative velocity
                 ub(i) = configure.velocity_max;
-                x0(i) = configure.velocity_max;
-%                 x0(i) = ub(i) - iternum * 2/5;
-%                 x0(i) = unifrnd(lb(i),ub(i));
-%                 bound_index = ceil(i/(initial_N+1));
-%                 if current_point(bound_index)> configure.end_point(bound_index)
-%                     x0(i) = unifrnd(lb(i),0);
-%                 else                   
-%                     x0(i) = unifrnd(0,ub(i));
-%                 end
+                
+%                 x0(i) = configure.velocity_max;
+                filename = 'datalog_1_' + string(current_step)+'.mat';
+                if exist(filename,'file')==1
+                    datalogname = load ('datalog_1_' + string(i));
+                    datalog = datalogname.datalog;
+                    x0(i) = datalog.behavior_plan(ceil(i/3),mod(i,3));
+                else
+                    x0(i) = configure.velocity_max;
+                end
+                
             end
         
             for i = 1: 3 %% velocity constraint for the last point
@@ -315,24 +315,23 @@ while (1)
                 else
                     lb(index) = max(configure.velocity_min, (following_point(end,i)-following_point(end-1,i))/configure.Time_step);
                 end
-%                 lb(index) = max(configure.velocity_min, (following_point(end,i)-following_point(end-1,i))/configure.Time_step);
-%                 ub(index) = configure.velocity_max;
-%                 ub(index) = min(configure.velocity_max, (following_point(end,i)-following_point(end-1,i))/configure.Time_step);
                 ub(index) = max(lb(index),ub(index)); 
-%                 x0(index) = ub(index) - iternum * (ub(index)-lb(index))/30;
                 x0(index) = max(lb(index),ub(index));
-%                if current_point(i)> configure.end_point(i)
-%                     x0(index) = unifrnd(lb(index),0);
-%                else                   
-%                     x0(index) = unifrnd(0,ub(index));
-%                end
+                
+                if exist(filename,'file')==1
+                    datalogname = load ('datalog_1_' + string(i));
+                    datalog = datalogname.datalog;
+                    x0(i) = datalog.behavior_plan(initial_N+1,i);
+                else
+                    x0(index) = max(lb(index),ub(index));
+                end
+                
             end
         
             for i = (initial_N+1) * 3 + 1 : (initial_N+1) * 4
                 lb(i) = 0;
                 ub(i) = configure.sensor_accuracy;
                 x0(i) = configure.sensor_accuracy;
-%                 x0(i) = unifrnd(lb(i),ub(i));
             end
     
             length_o = 0;
@@ -362,7 +361,15 @@ while (1)
         %%0925 alpha, beta, 
         lb = [lb,0,0,0,0,0];
         ub = [ub,1,1,1,1,1];
-        x0 = [x0,1,1,1,1,1];
+        filename = 'datalog_1_' + string(current_step)+'.mat';
+        if exist(filename,'file')==1
+            datalogname = load ('datalog_1_' + string(i));
+            datalog = datalogname.datalog;
+            x0 = [x0,datalog.violation_flag];
+        else
+            x0 = [x0,1,1,1,1,1];
+        end
+%         x0 = [x0,1,1,1,1,1];
 
         options.Algorithm = 'sqp';
         options.Display = 'off';
@@ -395,12 +402,13 @@ while (1)
             datalog = DataLog();
             datalog = InputLog(datalog, env_known, system_state, configure);
             datalog = OutputLog(datalog, behavior_plan, violation_flag, violation_degree, exitflag);
-            filename = 'datalog_' + string(num_map) +'_' + string(current_step) + '.mat';
+            datalog
+%             filename = 'datalog_' + string(num_map) +'_' + string(current_step) + '.mat';
 %             new_folder = 'C:\Users\lenovo\Documents\GitHub\Learning-for-Multiple-Goal-Adaptation\UAV case\adaptation_example\Datalog' + string(date);
 %             mkdir(new_folder);
 %             pathname = 'C:\Users\lenovo\Documents\GitHub\Learning-for-Multiple-Goal-Adaptation\UAV case\adaptation_example\Datalog\';
 %             filename = pathname + filename;
-            save(filename, 'datalog');
+%             save(filename, 'datalog');
             
             fprintf(2,"there is a solution!!%d, %d\n",exitflag,current_step)
 

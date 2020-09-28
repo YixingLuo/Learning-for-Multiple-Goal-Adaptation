@@ -9,7 +9,7 @@ tag_list3 = zeros(100,100);
 
 global eplison
 eplison = [0,0,1e-6,1e-6,1e-6];
-iternum = 1000;
+iternum = 1;
 num_o = [19];
 num_p = [7];
     for np = 1:length(num_p)
