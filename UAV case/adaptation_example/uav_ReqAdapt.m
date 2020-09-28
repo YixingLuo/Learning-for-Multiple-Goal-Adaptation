@@ -2,11 +2,7 @@ function [data, trajectory,velocity_history,planning_time, rate_list, tag_list] 
 global env
 global env_known
 global configure
-global eplison
-global ratio
 configure = Configure();
-% eplison = [0,0,1e-6,1e-6,1e-6];
-eplison = [1e-20,1e-20,1e-10,1e-20,0.005];
 current_step = 1;
 start_point = [configure.start_point(1),configure.start_point(2),configure.start_point(3),0];
 end_point = [configure.end_point(1),configure.end_point(2),configure.end_point(3),0];

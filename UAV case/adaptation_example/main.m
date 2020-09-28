@@ -7,8 +7,6 @@ planningtime3 = zeros(100,100);
 rate_list3 = zeros(100,100);
 tag_list3 = zeros(100,100);
 
-global eplison
-eplison = [0,0,1e-6,1e-6,1e-6];
 iternum = 1000;
 num_o = [19];
 num_p = [7];
