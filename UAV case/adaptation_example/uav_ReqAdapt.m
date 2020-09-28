@@ -122,8 +122,8 @@ while (1)
         [SR, DS_SR, PR, DS_PR, DS_acc] = caculate_risk(trajectory, env);
 %         [SR_known, PR_known] = caculate_risk(trajectory,env_known);
         data = [DS_i, DS_t, DS_e, SR, DS_SR, PR, DS_PR, plan_num, current_step, DS_acc];
-        name1 = 'planningtime.mat';
-        save(name1, 'planning_time');
+%         name1 = 'planningtime.mat';
+%         save(name1, 'planning_time');
 %         name2 = 'trajectory.mat';
 %         save(name2, 'trajectory');
 %         name3 = 'velocity_history.mat';
