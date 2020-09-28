@@ -3,9 +3,9 @@ classdef Configure
 grid_x = 10
 grid_y = 10
 grid_z = 10
-obstacle_likelihood = 0.7
-privacy_likelihood = 0.3
-map_likehood = 1
+% obstacle_likelihood = 0.7
+% privacy_likelihood = 0.3
+% map_likehood = 1
 obstacle_radius = 0.3
 privacy_radius = 0.5
 obstacle_max = 0.2  %R_max
@@ -28,7 +28,7 @@ battery_initial = 0
 delay = 0
 N;
 start_point = [0,0,0,0]
-end_point = [9,9,9,1]
+end_point = [9,9,9,0]
     end
  methods
         function config = Configure(config)

@@ -1,7 +1,7 @@
 function f = obj_ReqAdapt(x)
 y = [0,0,0,0,0];
 for i = 1:5
-    if (x(end-5+1)>0.5)
+    if (x(end-5+i)>0.5)
         y(i) = 1;
     end
 end
@@ -38,6 +38,8 @@ end
 
 sum_y = 0;
 num_y = 0;
+
+
 if bound_p > 0
     for j = 1: bound_p
         x_index = 4*(initial_N + 1) + bound_o + j;

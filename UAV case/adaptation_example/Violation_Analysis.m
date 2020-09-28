@@ -1,7 +1,7 @@
 function [violation_flag, violation_degree] = Violation_Analysis(x)
 y = [0,0,0,0,0];
 for i = 1:5
-    if (x(end-5+1)>0.5)
+    if (x(end-5+i)>0.5)
         y(i) = 1;
     end
 end
@@ -57,8 +57,8 @@ end
 safety_ratio = 0;
 privacy_ratio = 0;
 info_ratio = y(3)*x(end-5-2) /(configure.forensic_target-configure.forensic_budget);
-time_ratio = y(4)*x(end-5-2) /(configure.Time_budget-configure.Time_target);
-energy_ratio = y(5)*x(end-5-2) /(configure.battery_budget-configure.battery_target);
+time_ratio = y(4)*x(end-5-1) /(configure.Time_budget-configure.Time_target);
+energy_ratio = y(5)*x(end-5) /(configure.battery_budget-configure.battery_target);
 if bound_o > 0
     safety_ratio = y(1)*safety_variance/(configure.obstacle_max * bound_o);
 end

@@ -1,7 +1,7 @@
 function [c,ceq] = mycon_ReqAdapt(x)
 y = [0,0,0,0,0];
 for i = 1:5
-    if (x(end-5+1)>0.5)
+    if (x(end-5+i)>0.5)
         y(i) = 1;
     end
 end
@@ -159,6 +159,4 @@ for j = 1: length_p
         c = [c, - dis_p(i, j) + (configure.radius + configure.privacy_radius + configure.privacy_max - y(2)* x(x_index))];
     end
 end
-
-
 

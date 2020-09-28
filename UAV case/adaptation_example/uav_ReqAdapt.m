@@ -77,13 +77,13 @@ following_point = [following_point; end_point];
 
 
 while (1)
-%     if no_solution_flag == 1
-%         needplan = 1;
-%         no_solution_flag = 0;
-%     else
-%         needplan = 0;
-%     end
-    needplan = 1;
+    if no_solution_flag == 1
+        needplan = 1;
+        no_solution_flag = 0;
+    else
+        needplan = 0;
+    end
+%     needplan = 1;
     
     if  index_cond <= length(indextemp) && current_step == indextemp(index_cond)        
         needplan = 1;
@@ -100,6 +100,7 @@ while (1)
             elseif cond(index_cond,1) == 6
                 configure = AccuracyDisturbance(configure, cond(index_cond,2));
         end
+%         current_step, configure
         index_cond = index_cond+1;
     end
     
@@ -204,7 +205,9 @@ while (1)
 %         %|| (mod(current_step,configure.N) == 0)
 %         needplan = 1;
 %     end
-%     if length(env_known.obstacle_list) == 0 && length(env_known.privacy_list) == 0
+    if length(env_known.obstacle_list) ~= 0 || length(env_known.privacy_list) ~= 0
+        needplan = 1;
+    end
     
     if needplan == 0
         nowp_x = [];
@@ -279,7 +282,7 @@ while (1)
     exitflag = 0;
     exitflag_relax = 0;
     iternum = 0;
-    while exitflag <=0 && iternum <= 5
+    while exitflag <=0 && iternum <= 10
 %         iternum = iternum + 1;
 %         infeasible = 1;
 %         while infeasible
@@ -292,7 +295,8 @@ while (1)
             for i = 1 : (initial_N+1) * 3
                 lb(i) = configure.velocity_min; %% negative velocity
                 ub(i) = configure.velocity_max;
-                x0(i) = ub(i) - iternum * 2/5;
+                x0(i) = configure.velocity_max;
+%                 x0(i) = ub(i) - iternum * 2/5;
 %                 x0(i) = unifrnd(lb(i),ub(i));
 %                 bound_index = ceil(i/(initial_N+1));
 %                 if current_point(bound_index)> configure.end_point(bound_index)
@@ -358,7 +362,7 @@ while (1)
         %%0925 alpha, beta, 
         lb = [lb,0,0,0,0,0];
         ub = [ub,1,1,1,1,1];
-        x0 = [x0,0,0,0,0,0];
+        x0 = [x0,1,1,1,1,1];
 
         options.Algorithm = 'sqp';
         options.Display = 'off';
@@ -367,15 +371,14 @@ while (1)
         tau = configure.Time_step;
 
         iternum = iternum + 1;
-        [violation_flag, violation_degree] = Violation_Analysis(x);
-        
+            
         if exitflag > 0 
+            
             break
         end
     end
 
     if exitflag > 0
-            fprintf('no need replanning')
             plan_num = plan_num + 1;
             flag = [flag, exitflag];
             plan_x (current_step,1) = length(x);
@@ -384,14 +387,20 @@ while (1)
             end
             system_state = [current_point(1),current_point(2),current_point(3),current_point(4),information, energy, time];
             behavior_plan = [];
+            [violation_flag, violation_degree] = Violation_Analysis(x);
+            x(end-5:end)
             for k = 1: (initial_N+1) 
                 behavior_plan (k,:) = [x(k), x(k + initial_N + 1), x(k + 2 *(initial_N + 1)), x(k + 3 *(initial_N + 1))];
             end
             datalog = DataLog();
             datalog = InputLog(datalog, env_known, system_state, configure);
             datalog = OutputLog(datalog, behavior_plan, violation_flag, violation_degree, exitflag);
-            name = 'datalog-' + string(num_map) +'-' + string(current_step) + '.mat';
-            save(name, 'datalog');
+            filename = 'datalog_' + string(num_map) +'_' + string(current_step) + '.mat';
+%             new_folder = 'C:\Users\lenovo\Documents\GitHub\Learning-for-Multiple-Goal-Adaptation\UAV case\adaptation_example\Datalog' + string(date);
+%             mkdir(new_folder);
+            pathname = 'C:\Users\lenovo\Documents\GitHub\Learning-for-Multiple-Goal-Adaptation\UAV case\adaptation_example\Datalog\';
+            filename = pathname + filename;
+            save(filename, 'datalog');
             
             fprintf(2,"there is a solution!!%d, %d\n",exitflag,current_step)
 
