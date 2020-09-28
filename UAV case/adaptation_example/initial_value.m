@@ -1,4 +1,10 @@
-function [data, trajectory,velocity_history,planning_time, rate_list, tag_list] = uav_ReqAdapt(num_map,num_condition, indextemp)
+% function [data, trajectory,velocity_history,planning_time, rate_list, tag_list] = uav_ReqAdapt(num_map,num_condition, indextemp)
+num_map = 1;
+num_condition = 1;
+num_index = 1;
+name = 'index' + string(num_index) + '.mat';
+index = load(name);
+indextemp = index.index;
 global env
 global env_known
 global configure
@@ -121,9 +127,9 @@ while (1)
         DS_e = [energy,min(1,(configure.battery_budget - energy) /(configure.battery_budget - configure.battery_target))];
         [SR, DS_SR, PR, DS_PR, DS_acc] = caculate_risk(trajectory, env);
 %         [SR_known, PR_known] = caculate_risk(trajectory,env_known);
-        data = [DS_i, DS_t, DS_e, SR, DS_SR, PR, DS_PR, plan_num, current_step, DS_acc];
-        name1 = 'planningtime.mat';
-        save(name1, 'planning_time');
+        data = [DS_i, DS_t, DS_e, SR, DS_SR, PR, DS_PR, plan_num, relax_num, DS_acc]
+%         name1 = 'planningtime.mat';
+%         save(name1, 'planning_time');
 %         name2 = 'trajectory.mat';
 %         save(name2, 'trajectory');
 %         name3 = 'velocity_history.mat';
@@ -277,10 +283,13 @@ while (1)
         end
         continue
     end
-
+    %% time start
+    t1=clock;
     exitflag = 0;
+    exitflag_relax = 0;
     iternum = 0;
     while exitflag <=0 && iternum <= 10
+%         iternum = iternum + 1;
 %         infeasible = 1;
 %         while infeasible
             lb=[];
@@ -293,7 +302,7 @@ while (1)
                 lb(i) = configure.velocity_min; %% negative velocity
                 ub(i) = configure.velocity_max;
 %                 x0(i) = configure.velocity_max;
-                x0(i) = configure.sensor_accuracy - iternum * 1/5;
+                x0(i) = ub(i) - iternum * 1/5;
 %                 x0(i) = unifrnd(lb(i),ub(i));
 %                 bound_index = ceil(i/(initial_N+1));
 %                 if current_point(bound_index)> configure.end_point(bound_index)
@@ -354,7 +363,7 @@ while (1)
             end
             lb = [lb, 0, 0, 0];
             ub = [ub,configure.forensic_target-configure.forensic_budget, configure.Time_budget-configure.Time_target, configure.battery_budget-configure.battery_target];
-            x0 = [x0, 0, 0, 0];
+            x0 = [x0,0,0,0];
             
         %%0925 alpha, beta, 
         lb = [lb,0,0,0,0,0];
@@ -402,7 +411,7 @@ while (1)
 %             mkdir(new_folder);
 %             pathname = 'C:\Users\lenovo\Documents\GitHub\Learning-for-Multiple-Goal-Adaptation\UAV case\adaptation_example\Datalog\';
 %             filename = pathname + filename;
-            save(filename, 'datalog');
+%             save(filename, 'datalog');
             
             fprintf(2,"there is a solution!!%d, %d\n",exitflag,current_step)
 
