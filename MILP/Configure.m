@@ -3,9 +3,9 @@ classdef Configure
 grid_x = 10
 grid_y = 10
 grid_z = 10
-% obstacle_likelihood = 0.7
-% privacy_likelihood = 0.3
-% map_likehood = 1
+obstacle_likelihood = 0.7
+privacy_likelihood = 0.3
+map_likehood = 1
 obstacle_radius = 0.3
 privacy_radius = 0.5
 obstacle_max = 0.2  %R_max
@@ -33,7 +33,7 @@ end_point = [9,9,9,1]
  methods
         function config = Configure(config)
             config.N = floor(config.viewradius) / (config.Time_step * config.velocity_max);
-%             config.N = 5;
+%             config.N = 4;
         end
         function config = EnergyTarget(config, battery_target)
             config.battery_target = battery_target;
@@ -53,7 +53,11 @@ end_point = [9,9,9,1]
         end
         function config = AccuracyDisturbance(config, accuracy)
              config.sensor_accuracy = accuracy;
-        end       
+        end
+        function config = EnergyDisturbance(config, energy_per1, energy_per2)
+            config.battery_per = energy_per1;
+            config.battery_per2 = energy_per2;
+        end          
  end
 end
 
